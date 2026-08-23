@@ -1,15 +1,9 @@
 services:
 
-  backend:
-    build: .
+  nginx:
+    container_name: web
+    image: nginx:latest
     ports:
-      - "3000:3000"
-    depends_on:
-      - database
-
-  database:
-    image: postgres:17
-    environment:
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: app
+      - "9090:80"
+    volumes:
+      - ./website:/usr/share/nginx/html
