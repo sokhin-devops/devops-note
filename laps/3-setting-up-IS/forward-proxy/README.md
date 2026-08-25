@@ -28,20 +28,35 @@ Client / curl
 
 ## Run
 
-Start the proxy:
+Start the proxy with the helper script (resets any previous run, then
+waits until Squid is accepting connections on 3128):
+
+```bash
+./run.sh
+```
+
+Or manually:
 
 ```bash
 docker compose up -d
-```
-
-Check it's healthy:
-
-```bash
 docker compose ps
 docker compose logs -f squid
 ```
 
 ## Test
+
+Run the automated checks (requires the proxy to already be running via
+`./run.sh`, and outbound internet access from the Docker host):
+
+```bash
+./test.sh
+```
+
+This sends an HTTP request, an HTTPS (CONNECT) request, and a request
+to a blocked port through the proxy, checks the response codes, and
+prints the last few access log entries.
+
+### Manual tests
 
 Route a request through the proxy (HTTP):
 
