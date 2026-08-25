@@ -1,9 +1,0 @@
-services:
-
-  nginx:
-    container_name: web
-    image: nginx:latest
-    ports:
-      - "9090:80"
-    volumes:
-      - ./website:/usr/share/nginx/html
