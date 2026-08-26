@@ -3,18 +3,20 @@ set -e
 
 TRUSTED_IP="${TRUSTED_IP:?TRUSTED_IP must be set}"
 
-# Start from a clean INPUT chain
-iptables -F INPUT
+# Start from a clean, disabled ruleset so restarts are idempotent
+ufw --force reset >/dev/null
 
-# Always allow loopback and already-established connections
-iptables -A INPUT -i lo -j ACCEPT
-iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+# Default policy: nothing gets in, the server can still reach out
+ufw default deny incoming
+ufw default allow outgoing
 
 # Only the trusted source may reach port 80
-iptables -A INPUT -p tcp --dport 80 -s "$TRUSTED_IP" -j ACCEPT
+ufw allow from "$TRUSTED_IP" to any port 80 proto tcp
 
-# Everyone else is silently dropped
-iptables -A INPUT -p tcp --dport 80 -j DROP
+# The LOG target is unavailable in most container kernels
+ufw logging off
 
-echo "Firewall rules applied (trusted source: $TRUSTED_IP):"
-iptables -L INPUT -n --line-numbers
+ufw --force enable
+
+echo "UFW rules applied (trusted source: $TRUSTED_IP):"
+ufw status verbose
