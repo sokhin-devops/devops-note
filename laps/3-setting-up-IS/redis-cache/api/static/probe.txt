@@ -1,0 +1,3 @@
+const a = `hello ${x}`;
+history.prepend(row);
+while (h.children.length > 5) h.lastElementChild.remove();

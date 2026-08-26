@@ -1,0 +1,44 @@
+services:
+  api:
+    build: ./api
+    container_name: cache-api
+    restart: unless-stopped
+
+    ports:
+      - "8080:5000"
+
+    environment:
+      # How long a cached product stays in Redis before it expires
+      - CACHE_TTL=30
+      # How slow the simulated "database" lookup is, in milliseconds
+      - SLOW_QUERY_MS=1000
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    restart: unless-stopped
+
+    # No persistence (this is a cache, not a database) and a bounded memory
+    # budget that evicts the least recently used key when it fills up.
+    command:
+      - redis-server
+      - --save
+      - ""
+      - --appendonly
+      - "no"
+      - --maxmemory
+      - 64mb
+      - --maxmemory-policy
+      - allkeys-lru
+
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 2s
+      retries: 10

@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Redis Cache Lab</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root {
+    --accent: #dc2626;
+    --accent-dark: #b91c1c;
+    --bg-1: #fef2f2;
+    --bg-2: #fee2e2;
+    --ink: #1e293b;
+    --muted: #64748b;
+    --card: #ffffff;
+    --line: #e2e8f0;
+    --surface: #f8fafc;
+    --miss: #b45309;
+    --hit: #15803d;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: linear-gradient(135deg, var(--bg-1), var(--bg-2));
+    color: var(--ink);
+  }
+
+  .card {
+    background: var(--card);
+    border-radius: 20px;
+    padding: 2.75rem 3rem;
+    box-shadow: 0 20px 50px -12px rgba(220, 38, 38, 0.25);
+    width: 100%;
+    max-width: 560px;
+    text-align: center;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 64px;
+    height: 64px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+    color: white;
+    font-size: 1.75rem;
+    margin-bottom: 1.25rem;
+  }
+
+  h1 { margin: 0 0 0.5rem; font-size: 1.75rem; letter-spacing: -0.01em; }
+  p  { margin: 0.25rem 0; color: var(--muted); line-height: 1.5; }
+
+  /* ---------- controls ---------- */
+
+  .controls {
+    margin-top: 1.75rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    justify-content: center;
+  }
+
+  select, button {
+    font: inherit;
+    font-size: 0.92rem;
+    border-radius: 999px;
+    padding: 0.65rem 1.3rem;
+    cursor: pointer;
+  }
+
+  select {
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--ink);
+    padding-left: 1rem;
+  }
+
+  button { border: 0; font-weight: 600; }
+
+  button.primary {
+    background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+    color: white;
+  }
+
+  button.ghost {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    color: var(--ink);
+  }
+
+  button:disabled, select:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* ---------- result panel ---------- */
+
+  .panel {
+    margin-top: 1.75rem;
+    padding: 1.4rem;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: var(--surface);
+    text-align: left;
+    min-height: 118px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .hint { color: var(--muted); font-size: 0.9rem; text-align: center; }
+
+  .loading {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+
+  .spinner {
+    width: 22px;
+    height: 22px;
+    border: 3px solid var(--line);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    flex: none;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .product { width: 100%; }
+
+  .product-name { font-size: 1.15rem; font-weight: 700; margin-bottom: 0.15rem; }
+  .product-id   { color: var(--muted); font-size: 0.8rem; }
+
+  .product-price {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--accent-dark);
+    font-variant-numeric: tabular-nums;
+    margin: 0.6rem 0 0.9rem;
+  }
+
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    align-items: center;
+    border-top: 1px dashed var(--line);
+    padding-top: 0.8rem;
+  }
+
+  .chip {
+    padding: 0.28rem 0.7rem;
+    border-radius: 999px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    font-size: 0.76rem;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .pill {
+    padding: 0.28rem 0.7rem;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+  }
+  .pill.MISS  { background: #fef3c7; color: var(--miss); }
+  .pill.HIT   { background: #dcfce7; color: var(--hit); }
+  .pill.ERROR { background: #fee2e2; color: var(--accent-dark); }
+
+  /* ---------- history ---------- */
+
+  .history { margin-top: 1.1rem; display: grid; gap: 0.4rem; text-align: left; }
+
+  .row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.8rem;
+    padding: 0.55rem 0.9rem;
+    border-radius: 10px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    font-size: 0.82rem;
+  }
+
+  .row .label { color: var(--muted); }
+  .row .time { font-variant-numeric: tabular-nums; font-weight: 600; }
+
+  .tag {
+    display: inline-block;
+    margin-top: 1.5rem;
+    padding: 0.35rem 0.9rem;
+    border-radius: 999px;
+    background: var(--bg-1);
+    color: var(--accent-dark);
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="badge">&#9889;</div>
+    <h1>Redis Cache</h1>
+    <p>Request a product twice. The first call pays for the slow database
+       lookup; the second is served from Redis. Clear the cache to make it
+       slow again.</p>
+
+    <div class="controls">
+      <select id="product-id" aria-label="Product">
+        <option value="1">Product 1 &mdash; Keyboard</option>
+        <option value="2">Product 2 &mdash; Monitor</option>
+        <option value="3">Product 3 &mdash; Headphones</option>
+      </select>
+      <button class="primary" id="request">Request</button>
+      <button class="ghost" id="clear">Clear cache</button>
+    </div>
+
+    <div class="panel" id="panel">
+      <div class="hint">No request yet &mdash; press <strong>Request</strong>.</div>
+    </div>
+
+    <div class="history" id="history"></div>
+
+    <span class="tag" id="tag">READY</span>
+  </div>
+
+<script>
+  const byId = (id) => document.getElementById(id);
+
+  const select = byId('product-id');
+  const requestBtn = byId('request');
+  const clearBtn = byId('clear');
+  const panel = byId('panel');
+  const historyList = byId('history');
+  const tag = byId('tag');
+
+  const money = (value) =>
+    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
+
+  const busy = (isBusy) => {
+    requestBtn.disabled = isBusy;
+    clearBtn.disabled = isBusy;
+    select.disabled = isBusy;
+  };
+
+  const showLoading = (message) => {
+    panel.innerHTML =
+      '<div class="loading"><div class="spinner"></div><span>' + message + '</span></div>';
+  };
+
+  const showProduct = (data) => {
+    panel.innerHTML =
+      '<div class="product">' +
+        '<div class="product-name">' + data.product.name + '</div>' +
+        '<div class="product-id">id ' + data.product.id + '</div>' +
+        '<div class="product-price">' + money(data.product.price) + '</div>' +
+        '<div class="meta">' +
+          '<span class="pill ' + data.cache + '">' + data.cache + '</span>' +
+          '<span class="chip">' + data.elapsed_ms + ' ms</span>' +
+          '<span class="chip">served from ' + data.source + '</span>' +
+          '<span class="chip">expires in ' + data.ttl_seconds + 's</span>' +
+        '</div>' +
+      '</div>';
+  };
+
+  const showMessage = (message) => {
+    panel.innerHTML = '<div class="hint">' + message + '</div>';
+  };
+
+  const showError = (message) => {
+    panel.innerHTML =
+      '<div class="hint"><span class="pill ERROR">ERROR</span><br><br>' + message + '</div>';
+  };
+
+  const addHistory = (label, cache, detail) => {
+    const row = document.createElement('div');
+    row.className = 'row';
+    row.innerHTML =
+      '<span class="label">' + label + '</span>' +
+      '<span><span class="pill ' + cache + '">' + cache + '</span> ' +
+      '<span class="time">' + detail + '</span></span>';
+    historyList.prepend(row);
+    while (historyList.children.length > 5) {
+      historyList.lastElementChild.remove();
+    }
+  };
+
+  requestBtn.addEventListener('click', async () => {
+    const id = select.value;
+
+    busy(true);
+    tag.textContent = 'REQUESTING...';
+    showLoading('Requesting product ' + id + '... a cold lookup takes about a second.');
+
+    try {
+      const response = await fetch('/product/' + id);
+      const data = await response.json();
+
+      if (!response.ok) {
+        showError(data.error || ('Request failed with ' + response.status + '.'));
+        addHistory('Product ' + id, 'ERROR', String(response.status));
+        tag.textContent = 'REQUEST FAILED';
+        return;
+      }
+
+      showProduct(data);
+      addHistory('Product ' + id, data.cache, data.elapsed_ms + ' ms');
+      tag.textContent = data.cache === 'HIT'
+        ? 'SERVED FROM REDIS IN ' + data.elapsed_ms + ' MS'
+        : 'DATABASE LOOKUP TOOK ' + data.elapsed_ms + ' MS';
+    } catch (err) {
+      showError('Could not reach the API &mdash; is the stack running?');
+      tag.textContent = 'API UNREACHABLE';
+    } finally {
+      busy(false);
+    }
+  });
+
+  clearBtn.addEventListener('click', async () => {
+    busy(true);
+    tag.textContent = 'CLEARING...';
+    showLoading('Clearing the cache...');
+
+    try {
+      const response = await fetch('/cache', { method: 'DELETE' });
+      const data = await response.json();
+
+      showMessage(
+        'Cache cleared &mdash; ' + data.removed + ' key(s) removed.<br>' +
+        'The next request has to hit the database again.'
+      );
+      addHistory('Cache cleared', 'MISS', data.removed + ' key(s)');
+      tag.textContent = 'CACHE IS COLD';
+    } catch (err) {
+      showError('Could not reach the API &mdash; is the stack running?');
+      tag.textContent = 'API UNREACHABLE';
+    } finally {
+      busy(false);
+    }
+  });
+</script>
+</body>
+</html>
