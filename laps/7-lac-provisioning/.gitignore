@@ -1,0 +1,26 @@
+# Terraform's own state and plugin cache — this is exactly the
+# "never commit state" warning from D7.lac-provisioning.md, section on
+# the state file, applied verbatim.
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+
+# Secrets never belong in a committed .tfvars file. This lab keeps its one
+# secret (the API key) out of every .tfvars entirely — see .env.example —
+# but this stays as a backstop in case that ever changes.
+*.tfvars
+*.tfvars.json
+!environments/*.tfvars
+
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
+
+# This lab's own files
+.env
+tfplan
