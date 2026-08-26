@@ -1,0 +1,31 @@
+# Rendered at container start by the Nginx image's envsubst entrypoint,
+# so every backend serves the same files under its own identity.
+server {
+    listen 80;
+    server_name localhost;
+
+    add_header X-Backend "${BACKEND_NAME}" always;
+
+    # Plain-text identity endpoint — what the tests count to prove balancing
+    location = /whoami {
+        default_type text/plain;
+        return 200 "${BACKEND_NAME}\n";
+    }
+
+    # Per-backend health endpoint
+    location = /health {
+        access_log off;
+        default_type text/plain;
+        return 200 "${BACKEND_NAME} ok\n";
+    }
+
+    location / {
+        root /usr/share/nginx/html;
+        index index.html;
+
+        # Stamp this backend's name and colour into the shared page
+        sub_filter '__BACKEND_NAME__' '${BACKEND_NAME}';
+        sub_filter '__BACKEND_COLOR__' '${BACKEND_COLOR}';
+        sub_filter_once off;
+    }
+}
