@@ -1,0 +1,15 @@
+# Authoritative for the lab's own zone: answers come from the zone file.
+lab.internal:53 {
+    file /etc/coredns/db.lab.internal
+    log
+    errors
+}
+
+# Everything else is forwarded to Docker's embedded resolver (127.0.0.11),
+# which is how "web" and "api" still resolve as plain container names.
+.:53 {
+    forward . 127.0.0.11
+    cache 30
+    log
+    errors
+}

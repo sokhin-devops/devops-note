@@ -1,0 +1,61 @@
+services:
+  # The workstation you run every exercise from. nicolaka/netshoot ships the
+  # whole networking toolbox: ip, ss, dig, curl, ping, traceroute, nc, tcpdump.
+  client:
+    image: nicolaka/netshoot:latest
+    container_name: client
+    command: sleep infinity
+    # Point this container at the lab's own DNS server instead of Docker's.
+    dns:
+      - 172.30.0.53
+    networks:
+      netlab:
+        ipv4_address: 172.30.0.100
+
+  # Authoritative DNS for the lab.internal zone (A, AAAA, CNAME, MX, TXT, NS).
+  dns:
+    image: coredns/coredns:1.11.3
+    container_name: dns
+    command: ["-conf", "/etc/coredns/Corefile"]
+    volumes:
+      - ./coredns/Corefile:/etc/coredns/Corefile:ro
+      - ./coredns/db.lab.internal:/etc/coredns/db.lab.internal:ro
+    networks:
+      netlab:
+        ipv4_address: 172.30.0.53
+
+  # An HTTP service on the standard port 80
+  web:
+    image: nginx:alpine
+    container_name: web
+    volumes:
+      - ./web/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./web/index.html:/usr/share/nginx/html/index.html:ro
+    networks:
+      netlab:
+        ipv4_address: 172.30.0.10
+    ports:
+      - "8080:80"
+
+  # A second HTTP service on a non-standard port, to separate "which machine?"
+  # from "which service?"
+  api:
+    image: nginx:alpine
+    container_name: api
+    volumes:
+      - ./api/default.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      netlab:
+        ipv4_address: 172.30.0.20
+    ports:
+      - "8081:3000"
+
+networks:
+  netlab:
+    # An explicit name, so the network is "netlab" and not "<project>_netlab"
+    name: netlab
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.30.0.0/24
+          gateway: 172.30.0.1

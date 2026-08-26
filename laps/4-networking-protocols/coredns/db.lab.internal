@@ -1,0 +1,30 @@
+; Zone file for lab.internal — one record of every type from the lesson.
+$ORIGIN lab.internal.
+$TTL 60
+
+@       IN  SOA ns.lab.internal. admin.lab.internal. (
+                2026082601 ; serial
+                7200       ; refresh
+                3600       ; retry
+                1209600    ; expire
+                3600 )     ; minimum
+
+@       IN  NS      ns.lab.internal.
+
+; A — name to IPv4 address
+ns      IN  A       172.30.0.53
+web     IN  A       172.30.0.10
+api     IN  A       172.30.0.20
+mail    IN  A       172.30.0.25
+
+; AAAA — name to IPv6 address (documentation range, nothing listens there)
+ipv6    IN  AAAA    2001:db8::10
+
+; CNAME — an alias pointing at another name
+www     IN  CNAME   web.lab.internal.
+
+; MX — where mail for this domain should go
+@       IN  MX      10 mail.lab.internal.
+
+; TXT — free-form text, used in the real world for SPF, domain proofs, etc.
+@       IN  TXT     "lab=networking-protocols"
