@@ -1,0 +1,3 @@
+# Never commit your API key or the ids of live resources
+.env
+state/

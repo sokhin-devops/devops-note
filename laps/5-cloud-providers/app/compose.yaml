@@ -1,0 +1,15 @@
+# The application you deploy to the cloud VM (lesson 38, steps 5 and 9).
+# Deliberately small: the interesting part is that it is running on a machine
+# you created from an API call a few minutes ago.
+services:
+  web:
+    image: nginx:alpine
+    container_name: lab-web
+    restart: unless-stopped
+
+    ports:
+      - "80:80"
+
+    volumes:
+      - ./html:/usr/share/nginx/html:ro
+      - ./default.conf:/etc/nginx/conf.d/default.conf:ro

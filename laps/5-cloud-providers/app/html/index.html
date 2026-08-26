@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Deployed on Vultr</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root {
+    --accent: #2563eb;
+    --accent-dark: #1d4ed8;
+    --bg-1: #eff6ff;
+    --bg-2: #dbeafe;
+    --ink: #1e293b;
+    --muted: #64748b;
+    --card: #ffffff;
+    --line: #e2e8f0;
+    --surface: #f8fafc;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: linear-gradient(135deg, var(--bg-1), var(--bg-2));
+    color: var(--ink);
+  }
+
+  .card {
+    background: var(--card);
+    border-radius: 20px;
+    padding: 2.75rem 3rem;
+    box-shadow: 0 20px 50px -12px rgba(37, 99, 235, 0.25);
+    width: 100%;
+    max-width: 540px;
+    text-align: center;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 64px;
+    height: 64px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+    color: white;
+    font-size: 1.75rem;
+    margin-bottom: 1.25rem;
+  }
+
+  h1 { margin: 0 0 0.5rem; font-size: 1.75rem; letter-spacing: -0.01em; }
+  p  { margin: 0.25rem 0; color: var(--muted); line-height: 1.5; }
+
+  .facts {
+    margin-top: 1.75rem;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    overflow: hidden;
+    text-align: left;
+  }
+
+  .fact {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.7rem 1rem;
+    font-size: 0.88rem;
+    background: var(--surface);
+    border-bottom: 1px solid var(--line);
+  }
+
+  .fact:last-child { border-bottom: 0; }
+  .fact .k { color: var(--muted); }
+  .fact .v { font-weight: 600; font-variant-numeric: tabular-nums; }
+
+  .stack {
+    margin-top: 1.5rem;
+    padding: 1rem;
+    border-radius: 14px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    font-size: 0.82rem;
+    line-height: 1.9;
+    color: var(--muted);
+    text-align: left;
+    white-space: pre;
+    overflow-x: auto;
+  }
+
+  .stack strong { color: var(--accent-dark); }
+
+  .tag {
+    display: inline-block;
+    margin-top: 1.5rem;
+    padding: 0.35rem 0.9rem;
+    border-radius: 999px;
+    background: var(--bg-1);
+    color: var(--accent-dark);
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="badge">&#9729;</div>
+    <h1>Deployed on Vultr</h1>
+    <p>This page is served by a container, on a virtual machine that did not
+       exist a few minutes ago, created by an API call from your laptop.</p>
+
+    <div class="facts">
+      <div class="fact"><span class="k">Public IP</span><span class="v">__SERVER_IP__</span></div>
+      <div class="fact"><span class="k">Region</span><span class="v">__REGION__</span></div>
+      <div class="fact"><span class="k">Deployed at</span><span class="v">__DEPLOYED_AT__</span></div>
+      <div class="fact"><span class="k">Served by</span><span class="v">nginx in Docker</span></div>
+    </div>
+
+    <div class="stack">internet
+  &darr;  <strong>Vultr cloud firewall</strong>   allows 22, 80, 443 only
+  &darr;  <strong>public IP</strong> __SERVER_IP__
+  &darr;  <strong>UFW</strong> on Ubuntu           the second layer
+  &darr;  <strong>Docker</strong>                  published :80
+  &darr;  <strong>nginx</strong>                   this page</div>
+
+    <span class="tag">RUN ./99-destroy.sh WHEN YOU ARE DONE</span>
+  </div>
+</body>
+</html>

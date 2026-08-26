@@ -1,0 +1,45 @@
+#cloud-config
+# Runs once, on the VM's first boot. This is lesson 38 steps 3, 4 and 7 done
+# automatically instead of by hand over SSH.
+#
+# __SSH_PUBLIC_KEY__ is replaced by 03-create-instance.sh with the contents of
+# the public key named in your .env.
+
+package_update: true
+package_upgrade: true
+
+packages:
+  - ca-certificates
+  - curl
+  - ufw
+
+# A non-root user, because working as root is a habit worth not forming
+users:
+  - name: deploy
+    sudo: "ALL=(ALL) NOPASSWD:ALL"
+    shell: /bin/bash
+    ssh_authorized_keys:
+      - __SSH_PUBLIC_KEY__
+
+runcmd:
+  # 1. The OS firewall — the inner layer, behind Vultr's cloud firewall
+  - ufw default deny incoming
+  - ufw default allow outgoing
+  - ufw allow 22/tcp
+  - ufw allow 80/tcp
+  - ufw allow 443/tcp
+  - ufw --force enable
+
+  # 2. Docker Engine and the Compose plugin
+  - curl -fsSL https://get.docker.com -o /tmp/get-docker.sh
+  - sh /tmp/get-docker.sh
+  - usermod -aG docker deploy
+  - systemctl enable --now docker
+
+  # 3. Leave a record of what happened, and a marker the lab scripts poll for
+  - docker --version > /var/log/lab-bootstrap.log 2>&1
+  - docker compose version >> /var/log/lab-bootstrap.log 2>&1
+  - ufw status verbose >> /var/log/lab-bootstrap.log 2>&1
+  - touch /var/lib/lab-ready
+
+final_message: "lab VM bootstrapped after $UPTIME seconds"
