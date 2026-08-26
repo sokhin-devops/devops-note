@@ -1,0 +1,17 @@
+# Template. 04-deploy-worker.sh renders this to wrangler.toml (gitignored,
+# since it holds real ids) by substituting the placeholders below —
+# the same pattern the Vultr lab uses for cloud-init.
+
+name = "__WORKER_NAME__"
+main = "src/index.js"
+compatibility_date = "2024-01-01"
+account_id = "__ACCOUNT_ID__"
+
+# Always keep the *.workers.dev URL available, even once the custom domain
+# in 05-route-domain.sh is wired up — it's the fastest way to check the
+# Worker itself is healthy, independent of DNS or the custom domain.
+workers_dev = true
+
+[[kv_namespaces]]
+binding = "RATE_LIMIT_KV"
+id = "__KV_NAMESPACE_ID__"

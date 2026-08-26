@@ -1,0 +1,6 @@
+# Never commit your API token or the ids of live resources
+.env
+state/
+worker/wrangler.toml
+worker/node_modules/
+worker/package-lock.json
