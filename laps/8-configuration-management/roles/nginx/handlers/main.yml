@@ -1,0 +1,7 @@
+---
+# Runs once at the end of the play if notified, no matter how many tasks
+# notified it — see the lesson's Handlers section.
+- name: restart nginx
+  ansible.builtin.service:
+    name: nginx
+    state: restarted

@@ -1,0 +1,59 @@
+services:
+  # The control machine from the lesson's architecture diagram: Ansible
+  # installed, SSHes out to the targets below. No elevated privileges —
+  # only the systemd-emulating targets need those, and that's worth noticing.
+  controller:
+    build: ./controller
+    container_name: lab-controller
+    working_dir: /ansible
+    volumes:
+      - .:/ansible
+      - ./ssh/id_ed25519:/run/lab-secrets/id_ed25519:ro
+    networks:
+      - labnet
+    depends_on:
+      - web1
+      - web2
+      - db1
+
+  # Three "servers" matching the lesson's own [webservers]/[databases]
+  # inventory example (section 7) exactly.
+  web1:
+    build: ./managed-node
+    container_name: lab-web1
+    hostname: web1
+    privileged: true
+    cgroup: host
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+      - ./ssh/id_ed25519.pub:/run/lab-secrets/id_ed25519.pub:ro
+    networks:
+      - labnet
+
+  web2:
+    build: ./managed-node
+    container_name: lab-web2
+    hostname: web2
+    privileged: true
+    cgroup: host
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+      - ./ssh/id_ed25519.pub:/run/lab-secrets/id_ed25519.pub:ro
+    networks:
+      - labnet
+
+  db1:
+    build: ./managed-node
+    container_name: lab-db1
+    hostname: db1
+    privileged: true
+    cgroup: host
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+      - ./ssh/id_ed25519.pub:/run/lab-secrets/id_ed25519.pub:ro
+    networks:
+      - labnet
+
+networks:
+  labnet:
+    driver: bridge

@@ -1,0 +1,68 @@
+# The lesson's "Basic Example: Build & Test" (D9.ci-cd-tools.md, section 9),
+# pointed at laps/9-ci-cd-tools/app/ instead of a repo-root project. Free,
+# safe, and it actually runs the moment this file lands on GitHub — no
+# secrets, no deployment, nothing that costs money or touches anything
+# outside this one job's runner.
+name: CI - ci-cd-tools lab app
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'laps/9-ci-cd-tools/app/**'
+      - '.github/workflows/ci-cd-lab-app.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'laps/9-ci-cd-tools/app/**'
+      - '.github/workflows/ci-cd-lab-app.yml'
+  workflow_dispatch: {}
+
+# Lesson section 17: cancel a superseded run instead of letting two pile up.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: laps/9-ci-cd-tools/app
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    # The lesson's matrix example, trimmed to two versions to keep every
+    # push cheap — three jobs instead of one, not thirty.
+    strategy:
+      matrix:
+        node-version: [18, 20]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+          cache-dependency-path: laps/9-ci-cd-tools/app/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-manifest-node${{ matrix.node-version }}
+          path: laps/9-ci-cd-tools/app/dist/build-manifest.json
+          retention-days: 7

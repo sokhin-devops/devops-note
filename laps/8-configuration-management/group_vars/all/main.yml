@@ -1,0 +1,19 @@
+---
+# Plain variables — safe to commit, nothing sensitive. group_vars/all
+# applies to every host; see host_vars/*.yml for per-host overrides.
+
+http_port: 80
+app_name: devops-lab
+common_packages:
+  - curl
+  - git
+  - vim
+
+# Every host_vars/*.yml file sets `deploy_env`; there's no default here on
+# purpose, so a missing host_vars file fails loudly (via the assert in
+# roles/app) instead of quietly deploying to the wrong environment.
+#
+# Named deploy_env, not "environment" — that name is an Ansible reserved
+# keyword (a task/play attribute for setting OS environment variables),
+# and shadowing it is a well-known footgun ansible-lint specifically
+# warns about.

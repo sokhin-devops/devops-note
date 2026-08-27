@@ -1,0 +1,26 @@
+# Rendered by Ansible's template module — Jinja2 expressions below are
+# resolved with this host's variables and facts before the file ever
+# reaches disk (an empty pair of braces here would break Jinja2 parsing,
+# which is exactly why this comment doesn't write them out literally).
+# Managed by Ansible: changes made by hand here will be overwritten on the
+# next playbook run.
+
+events {
+    worker_connections {{ nginx_worker_connections }};
+}
+
+http {
+    server {
+        listen {{ http_port }};
+        server_name {{ server_name | default(inventory_hostname) }};
+
+        root /var/www/{{ app_name }};
+        index index.html;
+
+        location = /nginx-health {
+            access_log off;
+            default_type text/plain;
+            return 200 "ok\n";
+        }
+    }
+}

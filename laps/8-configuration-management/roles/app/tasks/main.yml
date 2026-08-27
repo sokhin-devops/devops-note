@@ -1,0 +1,42 @@
+---
+- name: Fail loudly if this host has no deploy_env (better than deploying silently wrong)
+  ansible.builtin.assert:
+    that:
+      - deploy_env is defined
+    fail_msg: "No deploy_env set for {{ inventory_hostname }} — add host_vars/{{ inventory_hostname }}.yml"
+
+- name: Create the app directory
+  ansible.builtin.file:
+    path: "/var/www/{{ app_name }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Deploy the page from a Jinja2 template
+  ansible.builtin.template:
+    src: index.html.j2
+    dest: "/var/www/{{ app_name }}/index.html"
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Create demo user accounts (the lesson's Loops example)
+  ansible.builtin.user:
+    name: "{{ item.name }}"
+    shell: "{{ item.shell }}"
+  loop: "{{ demo_users }}"
+
+- name: Debian-family-only task — expect 'ok' (these containers are Ubuntu)
+  ansible.builtin.debug:
+    msg: "{{ inventory_hostname }} is Debian-family, as expected"
+  when: ansible_os_family == "Debian"
+
+- name: RedHat-family-only task — expect 'skipped', proving `when` filters for real
+  ansible.builtin.debug:
+    msg: "you should never see this line printed"
+  when: ansible_os_family == "RedHat"
+
+- name: Show the secret decrypted from ansible-vault
+  ansible.builtin.debug:
+    msg: "vault_greeting = {{ vault_greeting }}"

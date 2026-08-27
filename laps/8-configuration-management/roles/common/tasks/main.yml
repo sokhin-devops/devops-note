@@ -1,0 +1,20 @@
+---
+# Runs on every host (webservers and databases) — matches the lesson's
+# roles/common/tasks/main.yml exactly in spirit.
+
+- name: Update apt cache
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Install common packages
+  ansible.builtin.apt:
+    name: "{{ common_packages }}"
+    state: present
+
+- name: Show which facts Ansible gathered without being told to look for them
+  ansible.builtin.debug:
+    msg: >-
+      {{ inventory_hostname }} is {{ ansible_distribution }}
+      {{ ansible_distribution_version }} ({{ ansible_os_family }} family),
+      {{ ansible_processor_vcpus }} vCPU, {{ ansible_memtotal_mb }} MB RAM

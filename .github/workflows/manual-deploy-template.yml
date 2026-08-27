@@ -1,0 +1,98 @@
+# The lesson's "Real-World: Deploy to Production" (D9.ci-cd-tools.md,
+# section 10) — build+test -> provision (Terraform) -> configure (Ansible)
+# -> deploy -> smoke test -> notify, matching the labs already built in
+# this repo (7-lac-provisioning, 8-configuration-management).
+#
+# This workflow is deliberately inert: `workflow_dispatch` only (never
+# triggered by a push), and every step that would spend money or touch a
+# real server (terraform apply, ansible-playbook, a real notification) is
+# a `plan`/`--check`/`echo` instead. It exists to show the SHAPE of a real
+# pipeline — needs:, if:, environment gating, secrets — without anyone
+# accidentally billing a Vultr account by clicking a button.
+#
+# To make one step real, delete its "echo"/dry-run line and uncomment the
+# real command below it, then add the secrets it needs under
+# Settings -> Secrets and variables -> Actions. Do this one step at a
+# time, and read what GitHub Environments + required reviewers add on top
+# of what's here before wiring up anything that actually spends money.
+name: Manual deploy template (inert)
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_environment:
+        description: 'Which environment this run pretends to deploy'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - prod
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: laps/9-ci-cd-tools/app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: laps/9-ci-cd-tools/app/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+
+  provision:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Terraform init + plan (read-only — never apply from here)
+        working-directory: laps/7-lac-provisioning
+        run: |
+          echo "Would run:"
+          echo "  terraform init"
+          echo "  terraform plan -var-file=environments/${{ inputs.target_environment }}.tfvars"
+          # Real version needs VULTR_API_KEY as a repo secret:
+          # export VULTR_API_KEY="${{ secrets.VULTR_API_KEY }}"
+          # terraform init
+          # terraform plan -var-file=environments/${{ inputs.target_environment }}.tfvars
+
+  configure:
+    needs: provision
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Ansible syntax check only (never a real playbook run from here)
+        working-directory: laps/8-configuration-management
+        run: |
+          echo "Would run, against the IP(s) terraform just provisioned:"
+          echo "  ansible-playbook playbooks/site.yml --syntax-check"
+          echo "  ansible-playbook playbooks/site.yml --check"
+          # Real version needs an SSH key as a repo secret and a real
+          # inventory built from the terraform output — see the lesson's
+          # own "Generate Ansible inventory" step for the exact shape.
+
+  notify:
+    needs: [provision, configure]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Report the outcome
+        run: |
+          if [ "${{ needs.provision.result }}" = "success" ] && [ "${{ needs.configure.result }}" = "success" ]; then
+            echo "Would notify: deploy to ${{ inputs.target_environment }} succeeded"
+          else
+            echo "Would notify: deploy to ${{ inputs.target_environment }} FAILED"
+          fi
+          # Real version, e.g. Slack (lesson section 10):
+          # uses: slackapi/slack-github-action@v1
+          # with:
+          #   webhook-url: ${{ secrets.SLACK_WEBHOOK }}

@@ -1,0 +1,15 @@
+{
+  "name": "ci-cd-lab-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Minimal dependency-free app used by the CI/CD tools lab",
+  "main": "src/index.js",
+  "scripts": {
+    "lint": "node scripts/lint.js",
+    "test": "node --test test/",
+    "build": "node scripts/build.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

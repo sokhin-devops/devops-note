@@ -1,0 +1,10 @@
+---
+# PLAINTEXT for now. ./02-vault-setup.sh encrypts this file in place with
+# ansible-vault the first time you run the lab — after that, this file's
+# contents on disk are real ciphertext, not this placeholder text.
+#
+# This is the lesson's Vault section, made concrete: run
+#   ansible-vault view group_vars/all/vault.yml --vault-password-file .vault_pass
+# afterward and see for yourself that the file is genuinely encrypted, not
+# just renamed.
+vault_greeting: "this value was decrypted from an ansible-vault file"

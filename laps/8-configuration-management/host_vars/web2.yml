@@ -1,0 +1,6 @@
+---
+# Deliberately different from web1 — the point of host_vars is that two
+# hosts in the same group can still differ. Compare the deployed page on
+# web1 vs web2 in ./05-verify.sh.
+deploy_env: staging
+server_name: web2.lab.internal

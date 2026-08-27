@@ -1,0 +1,4 @@
+---
+demo_users:
+  - { name: labuser1, shell: /bin/bash }
+  - { name: labuser2, shell: /usr/sbin/nologin }

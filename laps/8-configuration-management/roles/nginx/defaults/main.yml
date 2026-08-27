@@ -1,0 +1,4 @@
+---
+# Lowest-precedence variables — group_vars/host_vars override these without
+# any error. Nothing here is set anywhere else, so this is the only source.
+nginx_worker_connections: 1024

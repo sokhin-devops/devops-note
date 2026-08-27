@@ -1,0 +1,76 @@
+services:
+  # Dev mode: auto-unsealed, root token fixed, all in memory. The lesson's
+  # own compose example (section 17) does exactly this, and is explicit
+  # that dev mode is "for learning only" — see the README's Notes.
+  vault:
+    image: hashicorp/vault:2.0
+    container_name: lab-vault
+    cap_add:
+      - IPC_LOCK
+    environment:
+      VAULT_DEV_ROOT_TOKEN_ID: labroot
+      VAULT_DEV_LISTEN_ADDRESS: 0.0.0.0:8200
+    ports:
+      - "8200:8200"
+    healthcheck:
+      test: ["CMD", "vault", "status"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+      start_period: 5s
+    networks:
+      - labnet
+
+  # What Vault's database secrets engine (./02-dynamic-db-secrets.sh)
+  # actually manages: real roles, created and dropped by Vault itself.
+  postgres:
+    image: postgres:16-alpine
+    container_name: lab-postgres
+    environment:
+      POSTGRES_USER: vaultadmin
+      POSTGRES_PASSWORD: ${POSTGRES_ADMIN_PASSWORD}
+      POSTGRES_DB: appdb
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vaultadmin -d appdb"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+    networks:
+      - labnet
+
+  # The toolbox every numbered script runs through — vault CLI, psql,
+  # curl, jq. Nothing here talks to Vault with any special privilege of
+  # its own; the token used for each command is whatever that script sets.
+  client:
+    build: ./client
+    container_name: lab-client
+    command: sleep infinity
+    environment:
+      VAULT_ADDR: http://vault:8200
+    volumes:
+      - ./policies:/policies:ro
+    depends_on:
+      vault:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    networks:
+      - labnet
+
+  # Lesson section 17: a container that fetches its own secret at startup.
+  # Not started by `docker compose up` — see ./04-docker-app.sh, since the
+  # secret it needs doesn't exist until ./01-kv-secrets.sh creates it.
+  app:
+    build: ./app
+    container_name: lab-app
+    environment:
+      VAULT_ADDR: http://vault:8200
+      VAULT_TOKEN: labroot
+    networks:
+      - labnet
+    profiles:
+      - app
+
+networks:
+  labnet:
+    driver: bridge

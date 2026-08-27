@@ -1,0 +1,34 @@
+---
+# Same shape as the lesson's "Ansible Playbook Template" (section 12):
+# pre_tasks -> roles -> post_tasks -> handlers, kept to two plays so the
+# databases group visibly gets less done to it than webservers — that
+# difference is the whole reason groups exist.
+
+- name: Baseline every host
+  hosts: all
+  become: true
+  roles:
+    - common
+
+- name: Configure and verify the web tier
+  hosts: webservers
+  become: true
+
+  pre_tasks:
+    - name: Announce this deployment
+      ansible.builtin.debug:
+        msg: "Deploying {{ app_name }} ({{ deploy_env }}) to {{ inventory_hostname }}"
+
+  roles:
+    - nginx
+    - app
+
+  post_tasks:
+    - name: Verify Nginx is actually answering, not just "started"
+      ansible.builtin.uri:
+        url: "http://localhost:{{ http_port }}/nginx-health"
+        status_code: 200
+      register: health
+      retries: 3
+      delay: 2
+      until: health.status == 200

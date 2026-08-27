@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>{{ app_name }} — {{ inventory_hostname }}</title></head>
+<body style="font-family: -apple-system, sans-serif; padding: 3rem; max-width: 32rem">
+  <h1>{{ inventory_hostname }}</h1>
+  <p><strong>deploy_env:</strong> {{ deploy_env }}</p>
+  <p><strong>os:</strong> {{ ansible_distribution }} {{ ansible_distribution_version }} ({{ ansible_os_family }})</p>
+  <p><strong>vault says:</strong> {{ vault_greeting }}</p>
+  <p style="color: #64748b">Templated by Ansible from roles/app/templates/index.html.j2
+     — {{ inventory_hostname }} and web1/web2's other host never share this
+     exact file; each render is host-specific.</p>
+</body>
+</html>

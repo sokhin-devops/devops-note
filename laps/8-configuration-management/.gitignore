@@ -1,0 +1,12 @@
+# Lab-generated SSH keypair (fresh per lab, never your real ~/.ssh key)
+ssh/
+
+# Vault password file — never commit this, even for a throwaway lab password
+.vault_pass
+
+# Ansible retry files
+*.retry
+
+# The encrypted vault contents ARE safe to commit once encrypted — that's
+# the whole point of ansible-vault — so group_vars/all/vault.yml is
+# deliberately NOT listed here.
