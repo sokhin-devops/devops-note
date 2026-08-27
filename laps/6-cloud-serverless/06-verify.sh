@@ -47,17 +47,57 @@ check_base() {
 }
 
 check_base "$worker_url" "workers.dev"
-[ -n "$custom_url" ] && check_base "$custom_url" "custom domain"
+
+if [ -n "$custom_url" ]; then
+  # DNS for a Custom Domain can take a few minutes to reach your own
+  # resolver even after Cloudflare's edge is already serving it correctly
+  # (its own resolvers, e.g. 1.1.1.1, are usually faster to update than
+  # your ISP/OS resolver). Poll before judging it, the same way
+  # ./05-route-domain.sh already does when it first attaches the domain.
+  echo
+  echo "-- waiting for $custom_url to resolve locally --"
+  domain_up=0
+  for i in $(seq 1 12); do
+    code="$(curl -s -o /dev/null -m 5 -w '%{http_code}' "$custom_url/health" 2>/dev/null)"
+    if [ "$code" = "200" ]; then
+      domain_up=1
+      break
+    fi
+    printf '\r  attempt %s/12 (got %s)...   ' "$i" "${code:-000}"
+    sleep 5
+  done
+  echo
+
+  if [ "$domain_up" = "1" ]; then
+    check_base "$custom_url" "custom domain"
+  else
+    echo
+    warn "$custom_url still isn't resolving from this machine after a minute of retries."
+    warn "Cloudflare's own edge may already be serving it correctly — check with:"
+    echo "    cf_ip=\$(curl -s -H 'accept: application/dns-json' \\"
+    echo "      'https://1.1.1.1/dns-query?name=$WORKER_HOSTNAME&type=A' | jq -r '.Answer[0].data')"
+    echo "    curl --resolve ${WORKER_HOSTNAME}:443:\$cf_ip https://$WORKER_HOSTNAME/health"
+    warn "If that returns 200, this is purely local DNS caching: flush it"
+    warn "(ipconfig /flushdns on Windows) or just wait — TTL is 300s, but"
+    warn "ISP/OS resolvers sometimes cache the prior NXDOMAIN longer than that."
+    fail "custom domain not reachable from this machine yet (see above — likely just propagation)"
+  fi
+fi
 
 echo
 echo "-- No cold start (lesson section 8) --"
-echo "  Five sequential requests to the same endpoint, timed:"
-for i in 1 2 3 4 5; do
-  t="$(curl -s -o /dev/null -m 10 -w '%{time_total}' "$worker_url/health")"
-  echo "    request $i: ${t}s"
-done
+echo "  Five requests reusing one curl connection (--next), so this times"
+echo "  the Worker's own response, not a fresh DNS+TCP+TLS handshake each time:"
+curl -s -o /dev/null -w '    request 1: %{time_total}s\n' "$worker_url/health" \
+  --next -s -o /dev/null -w '    request 2: %{time_total}s\n' "$worker_url/health" \
+  --next -s -o /dev/null -w '    request 3: %{time_total}s\n' "$worker_url/health" \
+  --next -s -o /dev/null -w '    request 4: %{time_total}s\n' "$worker_url/health" \
+  --next -s -o /dev/null -w '    request 5: %{time_total}s\n' "$worker_url/health"
 echo "  Compare the first request to the rest — with a cold-start platform"
 echo "  the first would be noticeably slower. Here they should look similar."
+echo "  (An earlier version of this check ran five separate curl processes,"
+echo "  which mostly measured network/TLS-handshake jitter per connection,"
+echo "  not the Worker's own warmness — fixed to reuse one connection.)"
 
 echo
 echo "-- Rate limiting via KV (lesson section 12, pattern 3) --"
